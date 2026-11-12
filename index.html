@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wall - Classroom Trivia Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        wallDark: '#130722',
+                        wallCard: '#240d47',
+                        wallPurpleAccent: '#7e22ce',
+                        wallYellow: '#ffea00',
+                        wallGold: '#f59e0b',
+                    },
+                    boxShadow: {
+                        'neon-yellow': '0 0 20px rgba(255, 234, 0, 0.45)',
+                        'neon-purple': '0 0 20px rgba(168, 85, 247, 0.45)',
+                        'neon-green': '0 0 20px rgba(16, 185, 129, 0.45)',
+                        'neon-red': '0 0 20px rgba(239, 68, 68, 0.45)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #130722;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 234, 0, 0.2) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(26, 9, 51, 0.9) 0px, transparent 100%);
+            background-attachment: fixed;
+            color: #F8FAFC;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(36, 13, 71, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 234, 0, 0.15);
+        }
+
+        .glass-card {
+            background: rgba(49, 17, 95, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Wall Grid FX */
+        .wall-bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 234, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 234, 0, 0.04) 1px, transparent 1px);
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #130722;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #581c87;
+            border-radius: 4px;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
+        .pulse-animation {
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .bounce-active {
+            animation: bounce-short 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen flex flex-col justify-between overflow-x-hidden wall-bg-grid">
+
+    <!-- TOP NAV BAR / HEADER -->
+    <header class="w-full glass-panel border-b border-purple-900/60 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="confirmReset()">
+                <div class="bg-gradient-to-tr from-amber-400 to-yellow-300 p-2.5 rounded-xl shadow-neon-yellow">
+                    <i class="fa-solid fa-cubes-stacked text-2xl text-purple-950"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-purple-300">
+                        THE WALL
+                    </h1>
+                    <p class="text-xs text-yellow-300/70 font-medium tracking-wide">CLASSROOM TRIVIA ARENA</p>
+                </div>
+            </div>
+
+            <!-- Global Status / Quick Controls -->
+            <div class="flex items-center space-x-4">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="px-3.5 py-2 rounded-xl glass-card hover:bg-purple-900/50 text-slate-300 hover:text-white transition-all flex items-center space-x-2 text-sm border border-purple-800">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-yellow-400"></i>
+                    <span id="soundLabel" class="hidden sm:inline">Sound ON</span>
+                </button>
+                <button onclick="confirmReset()" class="px-3.5 py-2 rounded-xl bg-purple-950/80 hover:bg-red-900/40 border border-purple-800 hover:border-red-500/50 text-slate-300 hover:text-red-300 transition-all text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">Reset Game</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+
+        <!-- SCREEN 1: GAME SETUP -->
+        <section id="setupScreen" class="w-full max-w-4xl mx-auto glass-panel rounded-3xl p-6 sm:p-10 shadow-2xl transition-all duration-500">
+            <div class="text-center mb-8">
+                <span class="px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-yellow-400/10 text-yellow-300 border border-yellow-400/30">
+                    Game Setup
+                </span>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold mt-2 text-white">Assemble Your Teams</h2>
+                <p class="text-purple-200/80 text-sm mt-1">Configure teams and members to begin climbing The Wall!</p>
+            </div>
+
+            <!-- Team Count Selector -->
+            <div class="mb-8 bg-purple-950/80 p-5 rounded-2xl border border-purple-800/60">
+                <label class="block text-sm font-semibold text-purple-200 mb-3 text-center sm:text-left">
+                    <i class="fa-solid fa-users text-yellow-400 mr-2"></i>Select Number of Teams (2 - 6):
+                </label>
+                <div class="grid grid-cols-5 gap-3 max-w-md mx-auto sm:mx-0" id="teamCountSelector">
+                    <button onclick="setTeamCount(2)" class="team-count-btn py-3 rounded-xl border border-purple-800 bg-purple-900/40 font-bold text-lg hover:border-yellow-400 transition-all text-purple-200" data-count="2">2</button>
+                    <button onclick="setTeamCount(3)" class="team-count-btn py-3 rounded-xl border border-purple-800 bg-purple-900/40 font-bold text-lg hover:border-yellow-400 transition-all text-purple-200" data-count="3">3</button>
+                    <button onclick="setTeamCount(4)" class="team-count-btn py-3 rounded-xl border border-yellow-400 bg-yellow-400/20 font-bold text-lg text-yellow-300 shadow-neon-yellow" data-count="4">4</button>
+                    <button onclick="setTeamCount(5)" class="team-count-btn py-3 rounded-xl border border-purple-800 bg-purple-900/40 font-bold text-lg hover:border-yellow-400 transition-all text-purple-200" data-count="5">5</button>
+                    <button onclick="setTeamCount(6)" class="team-count-btn py-3 rounded-xl border border-purple-800 bg-purple-900/40 font-bold text-lg hover:border-yellow-400 transition-all text-purple-200" data-count="6">6</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Team Input Cards Grid -->
+            <div id="teamInputsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <!-- Javascript will inject team forms here -->
+            </div>
+
+            <!-- Initial Score Banner -->
+            <div class="bg-purple-950/60 border border-yellow-400/20 rounded-2xl p-4 mb-8 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-yellow-400/20 flex items-center justify-center text-yellow-400 font-bold">
+                        <i class="fa-solid fa-coins text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-purple-100">Starting Points</h4>
+                        <p class="text-xs text-purple-300/70">All teams start with an initial score</p>
+                    </div>
+                </div>
+                <div class="font-display font-extrabold text-2xl text-yellow-400">
+                    1,000 PTS
+                </div>
+            </div>
+
+            <!-- Start Game Action -->
+            <div class="text-center">
+                <button onclick="startGame()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-purple-600 text-purple-950 font-display font-extrabold text-xl hover:opacity-95 transform hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-neon-yellow flex items-center justify-center mx-auto space-x-3">
+                    <span>START GAME</span>
+                    <i class="fa-solid fa-play text-purple-950"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: MAIN GAMEPLAY & QUESTION STAGE -->
+        <section id="gameplayScreen" class="hidden w-full flex-col space-y-6">
+
+            <!-- LEADERBOARD BAR -->
+            <div class="glass-panel rounded-2xl p-4 overflow-x-auto">
+                <div class="text-xs font-semibold text-yellow-300/80 uppercase tracking-wider mb-2 flex items-center">
+                    <i class="fa-solid fa-trophy text-yellow-400 mr-2"></i> Live Classroom Standings
+                </div>
+                <div id="leaderboardBar" class="flex items-center space-x-3 min-w-max">
+                    <!-- Javascript populates live score chips -->
+                </div>
+            </div>
+
+            <!-- CURRENT TURN BANNER -->
+            <div id="activeTeamCard" class="glass-panel rounded-3xl p-6 border-l-8 border-yellow-400 shadow-xl relative overflow-hidden transition-all duration-300">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div class="flex items-center space-x-4">
+                        <div id="activeTeamBadge" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-purple-950 font-black font-display text-2xl shadow-neon-yellow">
+                            1
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Active Team Turn</span>
+                            <h2 id="activeTeamName" class="font-display font-extrabold text-2xl sm:text-3xl text-white">
+                                Team Alpha
+                            </h2>
+                            <p id="activeTeamMembers" class="text-xs text-purple-200/80 mt-0.5">
+                                Members: Alex, Sam, Jordan
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4 bg-purple-950/70 p-3 rounded-2xl border border-purple-800 self-start sm:self-auto">
+                        <div class="text-right">
+                            <span class="text-xs font-medium text-purple-300/70 uppercase block">Current Score</span>
+                            <span id="activeTeamScore" class="font-display font-extrabold text-2xl text-yellow-400">
+                                1,000 PTS
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STAGE 2A: WAGER SELECTION PANEL -->
+            <div id="wagerStage" class="glass-panel rounded-3xl p-6 sm:p-8 text-center transition-all">
+                <div class="max-w-xl mx-auto">
+                    <div class="inline-flex items-center space-x-2 bg-yellow-400/10 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-semibold uppercase mb-4 border border-yellow-400/30">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>Step 1: Place Your Risk Wager</span>
+                    </div>
+                    <h3 class="font-display text-2xl sm:text-3xl font-bold text-white mb-2">How many points will you risk?</h3>
+                    <p class="text-purple-200/70 text-sm mb-6">Choose an amount between 50 and 500 points before unlocking the question.</p>
+
+                    <!-- Wager Display & Slider -->
+                    <div class="bg-purple-950/80 p-6 rounded-2xl border border-purple-800 mb-6 shadow-inner">
+                        <div class="font-display font-black text-4xl sm:text-5xl text-yellow-400 mb-4 tracking-tight" id="wagerDisplay">
+                            250 <span class="text-xl text-purple-300/60 font-normal">PTS</span>
+                        </div>
+
+                        <input type="range" id="wagerRange" min="50" max="500" step="10" value="250" oninput="updateWagerDisplay(this.value)" class="w-full h-3 bg-purple-900 rounded-lg appearance-none cursor-pointer accent-yellow-400">
+
+                        <!-- Quick Wager Buttons -->
+                        <div class="grid grid-cols-4 gap-2 mt-5">
+                            <button onclick="setWagerPreset(50)" class="py-2 rounded-xl bg-purple-900/50 hover:bg-purple-800 border border-purple-700 text-xs sm:text-sm font-semibold transition-all text-purple-200">50 PTS</button>
+                            <button onclick="setWagerPreset(150)" class="py-2 rounded-xl bg-purple-900/50 hover:bg-purple-800 border border-purple-700 text-xs sm:text-sm font-semibold transition-all text-purple-200">150 PTS</button>
+                            <button onclick="setWagerPreset(300)" class="py-2 rounded-xl bg-purple-900/50 hover:bg-purple-800 border border-purple-700 text-xs sm:text-sm font-semibold transition-all text-purple-200">300 PTS</button>
+                            <button onclick="setWagerPreset(500)" class="py-2 rounded-xl bg-purple-900/50 hover:bg-purple-800 border border-purple-700 text-xs sm:text-sm font-semibold transition-all text-purple-200">500 MAX</button>
+                        </div>
+                    </div>
+
+                    <button onclick="lockWagerAndDrawQuestion()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-purple-600 font-display font-extrabold text-lg text-purple-950 hover:opacity-95 shadow-neon-yellow flex items-center justify-center mx-auto space-x-2">
+                        <span>CONFIRM WAGER & REVEAL QUESTION</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STAGE 2B: QUESTION & ANSWERING STAGE (Hidden initially) -->
+            <div id="questionStage" class="hidden flex-col space-y-6">
+
+                <!-- SPECIAL EVENT TILE BANNER -->
+                <div id="specialEventTile" class="hidden rounded-2xl p-4 transition-all duration-300 flex items-center justify-between border shadow-lg">
+                    <div class="flex items-center space-x-3">
+                        <span id="specialEventIcon" class="text-3xl">🟢</span>
+                        <div>
+                            <h4 id="specialEventTitle" class="font-display font-extrabold text-lg uppercase text-white">Double Points Space!</h4>
+                            <p id="specialEventDesc" class="text-xs text-purple-200">Point rewards for this turn are doubled!</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white uppercase tracking-wider">SPECIAL TILE</span>
+                </div>
+
+                <!-- QUESTION CARD -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-yellow-400/30 relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="questionCategory" class="px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-purple-900/60 text-purple-200 border border-purple-700">
+                            Category: General Knowledge
+                        </span>
+                        <span id="wagerBadge" class="font-display font-bold text-yellow-400 text-sm bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/30">
+                            Wager: 250 PTS
+                        </span>
+                    </div>
+
+                    <div class="my-6">
+                        <h3 id="questionText" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-relaxed">
+                            Loading question...
+                        </h3>
+                    </div>
+
+                    <!-- Answer Reveal Box (Toggleable for Teacher/Moderator) -->
+                    <div class="mt-6 pt-4 border-t border-purple-800/80">
+                        <button onclick="toggleAnswerReveal()" class="text-xs font-semibold text-purple-300 hover:text-yellow-400 flex items-center space-x-2 transition-all focus:outline-none">
+                            <i class="fa-solid fa-eye text-sm"></i>
+                            <span id="revealAnswerBtnText">Show Verified Answer Key (For Moderator)</span>
+                        </button>
+                        <div id="answerRevealBox" class="hidden mt-3 p-4 rounded-xl bg-purple-950/90 border border-purple-800 text-purple-200 text-sm">
+                            <span class="font-bold text-yellow-400">Answer: </span>
+                            <span id="questionAnswer">Answer details will appear here.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOUR TRY RESULT SCORING BUTTONS -->
+                <div class="glass-panel rounded-3xl p-6">
+                    <div class="text-center mb-4">
+                        <h4 class="font-display font-bold text-xl text-white">Record Team Performance</h4>
+                        <p class="text-xs text-purple-300/70">Select how many attempts the team took to answer correctly:</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- 1st Try Button -->
+                        <button onclick="evaluateOutcome('1st')" class="scoring-btn group relative p-5 rounded-2xl bg-gradient-to-b from-purple-900/60 to-purple-950/90 hover:from-emerald-950/70 hover:to-purple-950 border border-emerald-500/40 hover:border-emerald-400 transition-all text-left shadow-lg hover:shadow-neon-green">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">1ST TRY</span>
+                                <i class="fa-solid fa-circle-check text-emerald-400 text-xl group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div class="font-display font-extrabold text-lg text-white mb-1">Perfect Answer</div>
+                            <div class="text-xs text-emerald-300 font-medium" id="scoreCalc1">Gains 2x Wager (+500 PTS)</div>
+                        </button>
+
+                        <!-- 2nd Try Button -->
+                        <button onclick="evaluateOutcome('2nd')" class="scoring-btn group relative p-5 rounded-2xl bg-gradient-to-b from-purple-900/60 to-purple-950/90 hover:from-amber-950/70 hover:to-purple-950 border border-yellow-400/40 hover:border-yellow-400 transition-all text-left shadow-lg hover:shadow-neon-yellow">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-yellow-400/20 text-yellow-400 border border-yellow-400/40">2ND TRY</span>
+                                <i class="fa-solid fa-check text-yellow-400 text-xl group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div class="font-display font-extrabold text-lg text-white mb-1">Good Recovery</div>
+                            <div class="text-xs text-yellow-300 font-medium" id="scoreCalc2">Gains 1.5x Wager (+375 PTS)</div>
+                        </button>
+
+                        <!-- 3rd Try Button -->
+                        <button onclick="evaluateOutcome('3rd')" class="scoring-btn group relative p-5 rounded-2xl bg-gradient-to-b from-purple-900/60 to-purple-950/90 hover:from-purple-800/70 hover:to-purple-950 border border-purple-500/40 hover:border-purple-400 transition-all text-left shadow-lg hover:shadow-neon-purple">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-purple-400/20 text-purple-300 border border-purple-400/40">3RD TRY</span>
+                                <i class="fa-solid fa-shield text-purple-300 text-xl group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div class="font-display font-extrabold text-lg text-white mb-1">Safe Pass</div>
+                            <div class="text-xs text-purple-300 font-medium" id="scoreCalc3">Keeps Wager (+0 PTS)</div>
+                        </button>
+
+                        <!-- 4th Try / Missed Button -->
+                        <button onclick="evaluateOutcome('4th')" class="scoring-btn group relative p-5 rounded-2xl bg-gradient-to-b from-purple-900/60 to-purple-950/90 hover:from-rose-950/70 hover:to-purple-950 border border-rose-500/40 hover:border-rose-400 transition-all text-left shadow-lg hover:shadow-neon-red">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/40">MISSED</span>
+                                <i class="fa-solid fa-xmark text-rose-400 text-xl group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div class="font-display font-extrabold text-lg text-white mb-1">Incorrect</div>
+                            <div class="text-xs text-rose-300 font-medium" id="scoreCalc4">Loses Wager (-250 PTS)</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: INTERMISSION & SCORE SUMMARY -->
+        <section id="intermissionScreen" class="hidden w-full max-w-3xl mx-auto glass-panel rounded-3xl p-6 sm:p-10 shadow-2xl text-center">
+            <div class="inline-flex items-center space-x-2 bg-yellow-400/10 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-semibold uppercase mb-4 border border-yellow-400/30">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>Turn Summary</span>
+            </div>
+
+            <!-- Intermission Header Outcome -->
+            <h2 id="intermissionTitle" class="font-display font-black text-3xl sm:text-4xl text-white mb-2">
+                Great Effort!
+            </h2>
+            <p id="intermissionSubtitle" class="text-purple-200/70 text-sm mb-6">
+                Team Alpha completed their turn.
+            </p>
+
+            <!-- Turn Delta Box -->
+            <div id="scoreDeltaBox" class="bg-purple-950/80 rounded-2xl p-6 border border-purple-800 mb-8 max-w-md mx-auto">
+                <div class="text-xs font-semibold text-purple-300/70 uppercase mb-1">Score Modification</div>
+                <div id="scoreDeltaValue" class="font-display font-black text-4xl sm:text-5xl text-yellow-400 mb-2">
+                    +500 PTS
+                </div>
+                <div id="newTotalScore" class="text-sm font-semibold text-purple-200">
+                    New Total: 1,500 PTS
+                </div>
+            </div>
+
+            <!-- Leaderboard Snapshot -->
+            <div class="mb-8">
+                <h4 class="font-display font-bold text-yellow-300 mb-3 text-left">Current Leaderboard</h4>
+                <div id="intermissionLeaderboard" class="space-y-2">
+                    <!-- Javascript populates leaderboard ranks -->
+                </div>
+            </div>
+
+            <!-- Next Action Button -->
+            <button onclick="nextTurn()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-purple-600 font-display font-extrabold text-xl text-purple-950 hover:opacity-95 shadow-neon-yellow flex items-center justify-center mx-auto space-x-3">
+                <span>NEXT TEAM TURN</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full glass-panel border-t border-purple-900/60 px-6 py-4 text-center text-xs text-purple-300/50">
+        <p>The Wall - Interactive Classroom Trivia Game &copy; Built for Engaged Learning</p>
+    </footer>
+
+    <!-- AUDIO SYNTHESIZER & GAME LOGIC -->
+    <script>
+        // --- GAME STATE VARIABLES ---
+        let teams = [];
+        let currentTeamIndex = 0;
+        let selectedWager = 250;
+        let currentQuestion = null;
+        let activeSpecialEvent = null; // null, 'DOUBLE', 'LOSE_TURN', 'BONUS'
+        let soundEnabled = true;
+
+        // --- PREPOPULATED TRIVIA BANK ---
+        const TRIVIA_BANK = [
+            {
+                category: "Science & Nature",
+                question: "What chemical element has the symbol 'Fe' on the periodic table?",
+                answer: "Iron"
+            },
+            {
+                category: "World Geography",
+                question: "What is the capital city of Australia?",
+                answer: "Canberra"
+            },
+            {
+                category: "Space & Astronomy",
+                question: "Which planet in our solar system is known for having the most visible ring system?",
+                answer: "Saturn"
+            },
+            {
+                category: "History",
+                question: "In what year did the Titanic sink after striking an iceberg?",
+                answer: "1912"
+            },
+            {
+                category: "Pop Culture & Movies",
+                question: "What superhero identity belongs to Peter Parker?",
+                answer: "Spider-Man"
+            },
+            {
+                category: "Literature",
+                question: "Who wrote the famous play 'Romeo and Juliet'?",
+                answer: "William Shakespeare"
+            },
+            {
+                category: "Mathematics",
+                question: "What is the square root of 144?",
+                answer: "12"
+            },
+            {
+                category: "Animals & Biology",
+                question: "What is the largest living species of mammal on Earth?",
+                answer: "The Blue Whale"
+            },
+            {
+                category: "Technology",
+                question: "What does the abbreviation 'CPU' stand for in computer science?",
+                answer: "Central Processing Unit"
+            },
+            {
+                category: "Food & Cooking",
+                question: "Which country is credited with inventing pizza?",
+                answer: "Italy"
+            },
+            {
+                category: "Sports",
+                question: "How long is a standard marathon in miles (rounded to nearest whole number)?",
+                answer: "26 miles (26.2 miles)"
+            },
+            {
+                category: "Geography",
+                question: "What is the longest river in South America?",
+                answer: "Amazon River"
+            },
+            {
+                category: "Science",
+                question: "What is the hardest natural substance found on Earth?",
+                answer: "Diamond"
+            },
+            {
+                category: "History",
+                question: "Who was the first person to step on the Moon?",
+                answer: "Neil Armstrong"
+            },
+            {
+                category: "Pop Culture",
+                question: "How many strings does a standard acoustic guitar have?",
+                answer: "6 strings"
+            }
+        ];
+
+        let availableQuestions = [...TRIVIA_BANK];
+
+        // --- WEB AUDIO API SYNTHESIZER ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.1); // C#
+                    osc.frequency.setValueAtTime(659.25, now + 0.2); // E
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'fail') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'special') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.08);
+                    osc.frequency.setValueAtTime(783.99, now + 0.16);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.24);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const label = document.getElementById('soundLabel');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-cyan-400';
+                label.innerText = 'Sound ON';
+                playSound('click');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                label.innerText = 'Sound OFF';
+            }
+        }
+
+        // --- SETUP SCREEN INITIALIZATION ---
+        window.onload = function() {
+            renderTeamInputs(4); // Default 4 teams
+        }
+
+        function setTeamCount(count) {
+            playSound('click');
+            document.querySelectorAll('.team-count-btn').forEach(btn => {
+                if (parseInt(btn.dataset.count) === count) {
+                    btn.className = 'team-count-btn py-3 rounded-xl border border-indigo-500 bg-indigo-600/30 font-bold text-lg text-white shadow-neon-cyan';
+                } else {
+                    btn.className = 'team-count-btn py-3 rounded-xl border border-slate-700 bg-slate-800 font-bold text-lg hover:border-indigo-500 transition-all text-slate-300';
+                }
+            });
+            renderTeamInputs(count);
+        }
+
+        function renderTeamInputs(count) {
+            const container = document.getElementById('teamInputsContainer');
+            const defaultNames = ["Team Yellow", "Team Purple", "Team Gold", "Team Violet", "Team Amber", "Team Magenta"];
+            const colorAccents = [
+                "border-yellow-400/50 text-yellow-300",
+                "border-purple-400/50 text-purple-300",
+                "border-amber-400/50 text-amber-300",
+                "border-indigo-400/50 text-indigo-300",
+                "border-pink-400/50 text-pink-300",
+                "border-fuchsia-400/50 text-fuchsia-300"
+            ];
+
+            // Preserve existing inputs if any
+            let existingValues = [];
+            for (let i = 0; i < 6; i++) {
+                const nameEl = document.getElementById(`teamNameInput_${i}`);
+                const memEl = document.getElementById(`teamMembersInput_${i}`);
+                if (nameEl && memEl) {
+                    existingValues.push({ name: nameEl.value, members: memEl.value });
+                }
+            }
+
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const defaultName = existingValues[i]?.name || defaultNames[i];
+                const defaultMembers = existingValues[i]?.members || `Student ${i*2+1}, Student ${i*2+2}`;
+                const colorClass = colorAccents[i % colorAccents.length];
+
+                const cardHtml = `
+                    <div class="bg-purple-950/70 p-4 sm:p-5 rounded-2xl border ${colorClass.split(' ')[0]} flex flex-col space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider ${colorClass.split(' ')[1]}">Team ${i + 1}</span>
+                            <span class="text-xs text-purple-300/60">Starts: 1,000 PTS</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-purple-300/80 mb-1">Team Name</label>
+                            <input type="text" id="teamNameInput_${i}" value="${defaultName}" 
+                                class="w-full px-3 py-2 rounded-xl bg-purple-900/60 border border-purple-700 text-white font-semibold focus:outline-none focus:border-yellow-400 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-purple-300/80 mb-1">Members / Roster</label>
+                            <input type="text" id="teamMembersInput_${i}" value="${defaultMembers}" 
+                                class="w-full px-3 py-2 rounded-xl bg-purple-900/60 border border-purple-700 text-purple-200 text-xs focus:outline-none focus:border-yellow-400">
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            }
+        }
+
+        // --- GAME START & TURN LOGIC ---
+        function startGame() {
+            playSound('click');
+            const container = document.getElementById('teamInputsContainer');
+            const count = container.children.length;
+            teams = [];
+
+            for (let i = 0; i < count; i++) {
+                const name = document.getElementById(`teamNameInput_${i}`).value.trim() || `Team ${i+1}`;
+                const members = document.getElementById(`teamMembersInput_${i}`).value.trim() || `Members`;
+                teams.push({
+                    id: i + 1,
+                    name: name,
+                    members: members,
+                    score: 1000
+                });
+            }
+
+            currentTeamIndex = 0;
+
+            // Transition Screens
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            document.getElementById('gameplayScreen').classList.add('flex');
+
+            prepareTeamTurn();
+        }
+
+        function prepareTeamTurn() {
+            const team = teams[currentTeamIndex];
+
+            // Update Active Team Card
+            document.getElementById('activeTeamBadge').innerText = team.id;
+            document.getElementById('activeTeamName').innerText = team.name;
+            document.getElementById('activeTeamMembers').innerText = `Members: ${team.members}`;
+            document.getElementById('activeTeamScore').innerText = `${team.score.toLocaleString()} PTS`;
+
+            // Reset Wager & Stage Views
+            setWagerPreset(250);
+            document.getElementById('wagerStage').classList.remove('hidden');
+            document.getElementById('questionStage').classList.add('hidden');
+
+            updateLeaderboardBar();
+        }
+
+        function updateLeaderboardBar() {
+            const bar = document.getElementById('leaderboardBar');
+            bar.innerHTML = '';
+
+            teams.forEach((t) => {
+                const isCurrent = t.id === teams[currentTeamIndex].id;
+                const activeStyle = isCurrent ? 'bg-yellow-400/20 border-yellow-400 text-white shadow-neon-yellow' : 'bg-purple-950/70 border-purple-800 text-purple-200';
+                
+                const chip = `
+                    <div class="px-3.5 py-2 rounded-xl border ${activeStyle} flex items-center space-x-2 text-xs font-semibold">
+                        <span class="w-5 h-5 rounded-md bg-purple-900 flex items-center justify-center font-bold text-yellow-400">${t.id}</span>
+                        <span>${t.name}:</span>
+                        <span class="text-yellow-400 font-extrabold">${t.score.toLocaleString()} PTS</span>
+                    </div>
+                `;
+                bar.innerHTML += chip;
+            });
+        }
+
+        // --- WAGER SELECTION ---
+        function updateWagerDisplay(val) {
+            selectedWager = parseInt(val);
+            document.getElementById('wagerDisplay').innerHTML = `${selectedWager} <span class="text-xl text-slate-400 font-normal">PTS</span>`;
+            updateScoringCalculations();
+        }
+
+        function setWagerPreset(val) {
+            playSound('click');
+            const range = document.getElementById('wagerRange');
+            range.value = val;
+            updateWagerDisplay(val);
+        }
+
+        function updateScoringCalculations() {
+            let mult = 1;
+            if (activeSpecialEvent === 'DOUBLE') mult = 2;
+
+            document.getElementById('scoreCalc1').innerText = `Gains 2x Wager (+${selectedWager * 2 * mult} PTS)`;
+            document.getElementById('scoreCalc2').innerText = `Gains 1.5x Wager (+${Math.round(selectedWager * 1.5 * mult)} PTS)`;
+            document.getElementById('scoreCalc3').innerText = `Keeps Wager (+0 PTS)`;
+            document.getElementById('scoreCalc4').innerText = `Loses Wager (-${selectedWager} PTS)`;
+        }
+
+        // --- QUESTION DRAW & SPECIAL EVENTS ---
+        function lockWagerAndDrawQuestion() {
+            playSound('click');
+            document.getElementById('wagerStage').classList.add('hidden');
+            document.getElementById('questionStage').classList.remove('hidden');
+            document.getElementById('questionStage').classList.add('flex');
+
+            // Pick Question
+            if (availableQuestions.length === 0) {
+                availableQuestions = [...TRIVIA_BANK]; // Loop bank if exhausted
+            }
+            const qIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions.splice(qIndex, 1)[0];
+
+            document.getElementById('questionCategory').innerText = `Category: ${currentQuestion.category}`;
+            document.getElementById('wagerBadge').innerText = `Wager: ${selectedWager} PTS`;
+            document.getElementById('questionText').innerText = currentQuestion.question;
+            document.getElementById('questionAnswer').innerText = currentQuestion.answer;
+
+            // Reset Answer reveal box
+            document.getElementById('answerRevealBox').classList.add('hidden');
+            document.getElementById('revealAnswerBtnText').innerText = 'Show Verified Answer Key (For Moderator)';
+
+            // Random Special Space Generator (25% chance of trigger)
+            triggerRandomSpecialEvent();
+            updateScoringCalculations();
+        }
+
+        function triggerRandomSpecialEvent() {
+            const tile = document.getElementById('specialEventTile');
+            const rand = Math.random();
+
+            if (rand < 0.20) {
+                // Double Points Space
+                activeSpecialEvent = 'DOUBLE';
+                tile.className = 'rounded-2xl p-4 transition-all duration-300 flex items-center justify-between border shadow-lg bg-emerald-950/80 border-emerald-500/50 text-emerald-100 shadow-neon-green';
+                document.getElementById('specialEventIcon').innerText = '🟢';
+                document.getElementById('specialEventTitle').innerText = 'DOUBLE POINTS SPACE!';
+                document.getElementById('specialEventDesc').innerText = 'All correct wager earnings are DOUBLED this turn!';
+                tile.classList.remove('hidden');
+                playSound('special');
+            } else if (rand >= 0.20 && rand < 0.32) {
+                // Bonus Question Space
+                activeSpecialEvent = 'BONUS';
+                tile.className = 'rounded-2xl p-4 transition-all duration-300 flex items-center justify-between border shadow-lg bg-amber-950/80 border-amber-500/50 text-amber-100 shadow-neon-gold';
+                document.getElementById('specialEventIcon').innerText = '🟡';
+                document.getElementById('specialEventTitle').innerText = 'BONUS TRIVIA SPACE!';
+                document.getElementById('specialEventDesc').innerText = 'High stakes turn! Answer carefully!';
+                tile.classList.remove('hidden');
+                playSound('special');
+            } else if (rand >= 0.32 && rand < 0.40) {
+                // Lose Turn Space
+                activeSpecialEvent = 'LOSE_TURN';
+                tile.className = 'rounded-2xl p-4 transition-all duration-300 flex items-center justify-between border shadow-lg bg-rose-950/80 border-rose-500/50 text-rose-100 shadow-neon-red';
+                document.getElementById('specialEventIcon').innerText = '🔴';
+                document.getElementById('specialEventTitle').innerText = 'LOSE A TURN TILE!';
+                document.getElementById('specialEventDesc').innerText = 'Danger tile! Extra penalty risks apply.';
+                tile.classList.remove('hidden');
+                playSound('special');
+            } else {
+                activeSpecialEvent = null;
+                tile.classList.add('hidden');
+            }
+        }
+
+        function toggleAnswerReveal() {
+            playSound('click');
+            const box = document.getElementById('answerRevealBox');
+            const label = document.getElementById('revealAnswerBtnText');
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                label.innerText = 'Hide Answer Key';
+            } else {
+                box.classList.add('hidden');
+                label.innerText = 'Show Verified Answer Key (For Moderator)';
+            }
+        }
+
+        // --- EVALUATE OUTCOME & SCORING ---
+        function evaluateOutcome(attempt) {
+            let mult = (activeSpecialEvent === 'DOUBLE') ? 2 : 1;
+            let delta = 0;
+            let outcomeTitle = "";
+
+            if (attempt === '1st') {
+                delta = selectedWager * 2 * mult;
+                outcomeTitle = "1st Try Victory! 🎉";
+                playSound('success');
+            } else if (attempt === '2nd') {
+                delta = Math.round(selectedWager * 1.5 * mult);
+                outcomeTitle = "2nd Try Success! 👍";
+                playSound('success');
+            } else if (attempt === '3rd') {
+                delta = 0;
+                outcomeTitle = "3rd Try Safe Pass 🛡️";
+                playSound('click');
+            } else if (attempt === '4th') {
+                delta = -selectedWager;
+                outcomeTitle = "Question Missed ❌";
+                playSound('fail');
+            }
+
+            // Apply points to active team
+            const activeTeam = teams[currentTeamIndex];
+            activeTeam.score += delta;
+
+            // Show Intermission Screen
+            showIntermissionScreen(outcomeTitle, delta, activeTeam);
+        }
+
+        function showIntermissionScreen(title, delta, team) {
+            document.getElementById('gameplayScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('flex');
+
+            const intermission = document.getElementById('intermissionScreen');
+            intermission.classList.remove('hidden');
+
+            document.getElementById('intermissionTitle').innerText = title;
+            document.getElementById('intermissionSubtitle').innerText = `${team.name} completed their turn.`;
+
+            const deltaValEl = document.getElementById('scoreDeltaValue');
+            if (delta > 0) {
+                deltaValEl.innerText = `+${delta.toLocaleString()} PTS`;
+                deltaValEl.className = 'font-display font-black text-4xl sm:text-5xl text-yellow-400 mb-2';
+            } else if (delta < 0) {
+                deltaValEl.innerText = `${delta.toLocaleString()} PTS`;
+                deltaValEl.className = 'font-display font-black text-4xl sm:text-5xl text-rose-500 mb-2';
+            } else {
+                deltaValEl.innerText = `+0 PTS`;
+                deltaValEl.className = 'font-display font-black text-4xl sm:text-5xl text-purple-300 mb-2';
+            }
+
+            document.getElementById('newTotalScore').innerText = `New Total: ${team.score.toLocaleString()} PTS`;
+
+            // Populate Leaderboard list
+            const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+            const lbContainer = document.getElementById('intermissionLeaderboard');
+            lbContainer.innerHTML = '';
+
+            sortedTeams.forEach((t, index) => {
+                const rankMedal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                const isCurrent = t.id === team.id;
+                const rowClass = isCurrent ? 'bg-yellow-400/20 border-yellow-400 text-white font-bold' : 'bg-purple-950/70 border-purple-800 text-purple-200';
+
+                const row = `
+                    <div class="p-3 rounded-xl border ${rowClass} flex items-center justify-between text-sm">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-6 text-center font-bold text-yellow-400">${rankMedal}</span>
+                            <span>${t.name}</span>
+                        </div>
+                        <span class="font-display font-extrabold text-yellow-400">${t.score.toLocaleString()} PTS</span>
+                    </div>
+                `;
+                lbContainer.innerHTML += row;
+            });
+        }
+
+        function nextTurn() {
+            playSound('click');
+            // Advance Turn Index
+            currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+
+            document.getElementById('intermissionScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            document.getElementById('gameplayScreen').classList.add('flex');
+
+            prepareTeamTurn();
+        }
+
+        function confirmReset() {
+            if (confirm("Are you sure you want to reset the entire game and team setups?")) {
+                playSound('click');
+                teams = [];
+                currentTeamIndex = 0;
+                availableQuestions = [...TRIVIA_BANK];
+
+                document.getElementById('gameplayScreen').classList.add('hidden');
+                document.getElementById('gameplayScreen').classList.remove('flex');
+                document.getElementById('intermissionScreen').classList.add('hidden');
+                document.getElementById('setupScreen').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
